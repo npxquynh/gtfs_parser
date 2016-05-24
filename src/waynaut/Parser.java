@@ -34,7 +34,7 @@ public class Parser {
 		Path folder = Paths.get(args[0]);
 		System.out.println("Parsing GTFS from " + folder);
 		// Required classes files in the feed
-		String[] requiredFiles = {"agency"};
+		String[] requiredFiles = {"agency", "calendar_dates"};
 		
 		for (String fileName : requiredFiles) {
 			Path filePath = folder.resolve(fileName + ".txt");
@@ -44,11 +44,17 @@ public class Parser {
 				System.exit(0);
 			}	
 			
+			FeedParser fp;
+			String[] columns;
 			switch (fileName) {
 				case "agency":
-					FeedParser fp = new FeedParser<Agency>(Agency.class);	
-					String[] columns = {"agency_id", "agency_name", "agency_url", "agency_timezone", "agency_lang", "agency_phone"};
-					fp.parseCSVToBeanList(filePath, columns);			
+					fp = new FeedParser<Agency>(Agency.class);	
+					columns = "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone".split(",");
+					fp.parseCSVToBeanList(filePath, columns);		
+				case "calendar_dates":
+					fp = new FeedParser<CalendarDate>(CalendarDate.class);
+					columns = "service_id,date,exception_type".split(",");
+					fp.parseCSVToBeanList(filePath, columns);
 			}
 		}
 	}	
