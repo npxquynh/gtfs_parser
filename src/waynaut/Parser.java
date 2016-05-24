@@ -42,36 +42,48 @@ public class Parser {
 			if (!Files.exists(filePath)) {
 				System.out.format("Required file %s not existed", filePath);
 				System.exit(0);
+			}	
+			
+			switch(fileName) {
+				case "agency":
+					
 			}
 			
-			// Read the 1st line to get the header
+			String className = "waynaut." + WordUtils.capitalize(fileName);
 			
-//			File file = new File(filePath.toString());
-
-//			CSVParser parser = CSVParser.parse(file, StandardCharsets.UTF_8, CSVFormat.EXCEL.withFirstRecordAsHeader());
-//			for (CSVRecord record : parser) {
-//				System.out.println(record);
-//			}
-			
-			// Parse using opencsv
-			HeaderColumnNameTranslateMappingStrategy<Agency> agencyStrategy = new HeaderColumnNameTranslateMappingStrategy<Agency>();
-	        
-	        // Column mapping - general solution
-	        Map<String, String> columnMapping = new HashMap<String, String>();
-	        String[] columns = {"agency_id", "agency_name", "agency_url", "agency_timezone", "agency_lang", "agency_phone"};
-	        for (String column : columns) {
-	        	String newColumn = WordUtils.uncapitalize(WordUtils.capitalize(column, new char[]{'_'}).replaceAll("_", ""));
-	        	columnMapping.put(column, newColumn);
-	        }
-	        
-	        agencyStrategy.setType(Agency.class);
-	        agencyStrategy.setColumnMapping(columnMapping);
-	        CsvToBean<Agency> csvToBean = new CsvToBean<Agency>();
-	        CSVReader reader = new CSVReader(new FileReader(filePath.toString()));
-	        List<Agency> agencies = csvToBean.parse(agencyStrategy, reader);
-	        
-	        System.out.println(agencies);
-	        
+			parseCSVToBeanListAgency(filePath);
 		}
 	}	
+	
+	private static void parseCSVToBeanListAgency(Path filePath) throws IOException {
+		// Parse using opencsv
+		HeaderColumnNameTranslateMappingStrategy<Agency> strategy = new HeaderColumnNameTranslateMappingStrategy<Agency>();
+        
+        // Column mapping - general solution
+        String[] columns = {"agency_id", "agency_name", "agency_url", "agency_timezone", "agency_lang", "agency_phone"};
+        Map<String, String> columnMapping = createColumnMapping(columns);
+
+        strategy.setType(Agency.class);
+        strategy.setColumnMapping(columnMapping);
+        CsvToBean<Agency> csvToBean = new CsvToBean<Agency>();
+        CSVReader reader = new CSVReader(new FileReader(filePath.toString()));
+        List<Agency> agencies = csvToBean.parse(strategy, reader);
+        
+        System.out.println(agencies);
+	}
+	
+	public static Map<String, String> createColumnMapping(String[] columns) {
+		Map<String, String> columnMapping = new HashMap<String, String>();
+		
+        for (String column : columns) {
+        	String newColumn = toCamelCase(column);
+        	columnMapping.put(column, newColumn);
+        }    
+        return columnMapping;
+	}
+	
+	public static String toCamelCase(String s) {
+		return WordUtils.uncapitalize(WordUtils.capitalize(
+				s, new char[]{'_'}).replaceAll("_", ""));		
+	}
 }

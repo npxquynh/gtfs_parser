@@ -1,6 +1,6 @@
 package waynaut;
 
-public class Agency {
+public class Agency extends Entity {
 	private String agencyId;
 	private String agencyName;
 	private String agencyUrl;
