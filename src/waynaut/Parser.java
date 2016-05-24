@@ -44,30 +44,35 @@ public class Parser {
 				System.exit(0);
 			}	
 			
-			switch(fileName) {
+			switch (fileName) {
 				case "agency":
-					
+					FeedParser fp = new FeedParser<Agency>(Agency.class);	
+					String[] columns = {"agency_id", "agency_name", "agency_url", "agency_timezone", "agency_lang", "agency_phone"};
+					fp.parseCSVToBeanList(filePath, columns);			
 			}
-			
-			String className = "waynaut." + WordUtils.capitalize(fileName);
-			
-			parseCSVToBeanListAgency(filePath);
 		}
 	}	
-	
-	private static void parseCSVToBeanListAgency(Path filePath) throws IOException {
+}
+
+class FeedParser<T> {
+	final Class<T> typeParameterClass;
+
+    public FeedParser(Class<T> typeParameterClass) {	        
+    	this.typeParameterClass = typeParameterClass;
+	}
+	    
+	public <T> void parseCSVToBeanList(Path filePath, String[] columns) throws IOException {
 		// Parse using opencsv
-		HeaderColumnNameTranslateMappingStrategy<Agency> strategy = new HeaderColumnNameTranslateMappingStrategy<Agency>();
+		HeaderColumnNameTranslateMappingStrategy<T> strategy = new HeaderColumnNameTranslateMappingStrategy<T>();
         
         // Column mapping - general solution
-        String[] columns = {"agency_id", "agency_name", "agency_url", "agency_timezone", "agency_lang", "agency_phone"};
         Map<String, String> columnMapping = createColumnMapping(columns);
 
-        strategy.setType(Agency.class);
+        strategy.setType((Class<T>) this.typeParameterClass);
         strategy.setColumnMapping(columnMapping);
-        CsvToBean<Agency> csvToBean = new CsvToBean<Agency>();
+        CsvToBean<T> csvToBean = new CsvToBean<T>();
         CSVReader reader = new CSVReader(new FileReader(filePath.toString()));
-        List<Agency> agencies = csvToBean.parse(strategy, reader);
+        List<T> agencies = csvToBean.parse(strategy, reader);
         
         System.out.println(agencies);
 	}
@@ -86,4 +91,5 @@ public class Parser {
 		return WordUtils.uncapitalize(WordUtils.capitalize(
 				s, new char[]{'_'}).replaceAll("_", ""));		
 	}
+	
 }
