@@ -193,6 +193,7 @@ class MyParser<T> {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println("\nDone with " + filePath.toString());
 		return csvValues;
 	}
 	
@@ -228,7 +229,7 @@ class FeedParser<T> {
         CSVReader reader = new CSVReader(new FileReader(filePath.toString()));
         List<T> agencies = csvToBean.parse(strategy, reader);
         
-        System.out.println("Done with " + filePath.toString() + "\n");
+        System.out.println("\nDone with " + filePath.toString());
         return agencies;
 	}
 	

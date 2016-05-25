@@ -75,6 +75,6 @@ public class StopTimes {
 	
 	@Override
 	public String toString() {
-		return "Id=" + tripId + ", arrivalTime=" + arrivalTime + "\n";
+		return String.format("Trip %s arrives at %s", tripId, arrivalTime);
 	}
 }

@@ -67,6 +67,6 @@ public class Routes {
 
 	@Override
 	public String toString() {
-		return "Id=" + routeId + ",Name=" + routeShortName + "\n";
+		return String.format("Id = %s, Name = %s", routeId, routeShortName);
 	}
 }

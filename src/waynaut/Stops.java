@@ -132,6 +132,6 @@ public class Stops {
 	
 	@Override 
 	public String toString() {
-		return "Id=" + stopId + ",Name=" + stopName +"\n";
+		return String.format("Id = %s, Name = %s", stopId, stopName);
 	}
 }

@@ -32,6 +32,6 @@ public class Transfers {
 	
 	@Override
 	public String toString() {
-		return String.format("Transfer %s --> %s takes %\n", fromStopId, toStopId, minTransferTime); 
+		return String.format("Transfer %s --> %s takes %s", fromStopId, toStopId, minTransferTime); 
 	}
 }

@@ -1,6 +1,6 @@
 package waynaut;
 
-public class Agency extends Entity {
+public class Agency {
 	private String agencyId;
 	private String agencyName;
 	private String agencyUrl;
@@ -47,10 +47,6 @@ public class Agency extends Entity {
 	
 	@Override
     public String toString(){
-        return "Id="+agencyId+",Name="+agencyName+"\n";
+        return String.format("Agency %s is %s", agencyId, agencyName);
     }
-	
-
-	
-	// agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone;
 }

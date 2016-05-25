@@ -46,6 +46,6 @@ public class FeedInfo {
 	
 	@Override
 	public String toString() {
-		return "Feed from " + feedPublisherName + "at version = " + feedVersion + "\n";
+		return "Feed from " + feedPublisherName + "at version = " + feedVersion;
 	}
 }

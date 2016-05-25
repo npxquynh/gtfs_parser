@@ -26,6 +26,6 @@ public class CalendarDate {
 	
 	@Override
 	public String toString(){
-		return "Id=" + serviceId +", Date=" + date +"\n";
+		return "Id=" + serviceId +", Date=" + date;
 	}
 }

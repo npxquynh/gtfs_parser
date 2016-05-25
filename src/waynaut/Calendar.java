@@ -105,7 +105,7 @@ public class Calendar {
 	
 	@Override
 	public String toString() {
-		return "StartDate = " + startDate + ", EndDate = " + endDate + "\n";
+		return "StartDate = " + startDate + ", EndDate = " + endDate;
 	}
 	
 	private boolean boolFromString(String s) {

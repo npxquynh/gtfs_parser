@@ -76,6 +76,6 @@ public class Trips {
 	
 	@Override
 	public String toString() {
-		return "Id=" + tripId + ",Name=" + tripShortName + "\n";
+		return String.format("Trip %s is named %s", tripId, tripShortName);
 	}
 }

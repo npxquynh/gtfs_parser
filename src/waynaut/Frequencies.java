@@ -33,6 +33,6 @@ public class Frequencies {
 	
 	@Override
 	public String toString() {
-		return String.format("Trip %s starts at %s, ends at %s\n" , tripId, startTime, endTime);
+		return String.format("Trip %s starts at %s, ends at %s" , tripId, startTime, endTime);
 	}
 }
