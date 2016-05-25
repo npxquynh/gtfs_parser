@@ -53,34 +53,36 @@ public class Parser {
 			FeedParser fp = null;
 			String[] columns;
 			
-			MyParser mp;
+			MyParser mp = null;
 			switch (fileName) {
-				case "agency":
-					fp = new FeedParser<Agency>(Agency.class);
-					fp.parseCSVToBeanList(filePath);
-					break;
-				case "stops":
-					fp = new FeedParser<Stops>(Stops.class);
-					fp.parseCSVToBeanList(filePath);
-					break;
-				case "routes":
-					fp = new FeedParser<Routes>(Routes.class);
-					fp.parseCSVToBeanList(filePath);
-					break;
-				case "trips":
-					fp = new FeedParser<Trips>(Trips.class);
-					fp.parseCSVToBeanList(filePath);
-					break;
-				case "stop_times":
-					fp = new FeedParser<StopTimes>(StopTimes.class);
-					fp.parseCSVToBeanList(filePath);
-					break;
-				case "calendar":
-					// to handle the case where I need to convert from String -> Boolean, or String -> Date
-					mp = new MyParser<Calendar>(Calendar.class);
-					mp.parseCSV(filePath);					
-					break;
+			case "agency":
+				fp = new FeedParser<Agency>(Agency.class);
+				break;
+			case "stops":
+				fp = new FeedParser<Stops>(Stops.class);
+				break;
+			case "routes":
+				fp = new FeedParser<Routes>(Routes.class);
+				break;
+			case "trips":
+				fp = new FeedParser<Trips>(Trips.class);
+				break;
+			case "stop_times":
+				fp = new FeedParser<StopTimes>(StopTimes.class);
+				break;
+			case "calendar":
+				// to handle the case where I need to convert from String -> Boolean, or String -> Date
+				mp = new MyParser<Calendar>(Calendar.class);
+				break;
 			}			
+			
+			// Print the first 5 lines
+			if (fp != null) {
+				printFirstNthItems(fp.parseCSVToBeanList(filePath), 5);
+			}
+			if (mp != null) {
+				printFirstNthItems(mp.parseCSV(filePath), 5);
+			}
 		}
 		
 		String[] optionalFiles = {"calendar_dates", "feed_info", "frequencies", "transfers"};
@@ -94,15 +96,36 @@ public class Parser {
 				switch (fileName) {
 				case "calendar_dates":
 					fp = new FeedParser<CalendarDate>(CalendarDate.class);
-					fp.parseCSVToBeanList(filePath);
 					break;
 				case "feed_info":
 					fp = new FeedParser<FeedInfo>(FeedInfo.class);
-					fp.parseCSVToBeanList(filePath);
+					break;
+				case "frequencies":
+					fp = new FeedParser<Frequencies>(Frequencies.class);
+					break;
+				case "transfers":
+					fp = new FeedParser<Transfers>(Transfers.class);
+					break;
+				}
+				
+				// Print the first 5 lines
+				if (fp != null) {
+					printFirstNthItems(fp.parseCSVToBeanList(filePath), 5);
 				}
 			}
 		}
 	}	
+
+	public static <T> void printFirstNthItems(List<T> list, int N) {
+		int i = 0;
+		for (T item : list) {
+			i += 1;
+			if (i == N) {
+				break;
+			}
+			System.out.println(item);
+		}
+	}
 }
 
 class MyParser<T> {
@@ -223,5 +246,4 @@ class FeedParser<T> {
 		return WordUtils.uncapitalize(WordUtils.capitalize(
 				s, new char[]{'_'}).replaceAll("_", ""));		
 	}
-	
 }
