@@ -38,6 +38,13 @@ public class Parser {
 		Path folder = Paths.get(args[0]);
 		System.out.println("Parsing GTFS from " + folder);
 		
+		int DEFAULT_N_ELEMENT = 5;
+		int noElementsToPrint = DEFAULT_N_ELEMENT;
+		if (args.length > 1) {
+			noElementsToPrint = Integer.parseInt(args[1]);
+		}
+			
+		
 		if (!checkFeed(folder)) {
 			System.out.println("The folder provided is not the in the correct format");
 			System.exit(0);
@@ -89,10 +96,10 @@ public class Parser {
 			
 			// Print the first 5 lines
 			if (fp != null) {
-				printFirstNthItems(fp.parseCSVToBeanList(filePath), 5);
+				printFirstNthItems(fp.parseCSVToBeanList(filePath), noElementsToPrint);
 			}
 			if (mp != null) {
-				printFirstNthItems(mp.parseCSV(filePath), 5);
+				printFirstNthItems(mp.parseCSV(filePath), noElementsToPrint);
 			}
 		}
 	}	
@@ -112,10 +119,10 @@ public class Parser {
 	public static <T> void printFirstNthItems(List<T> list, int N) {
 		int i = 0;
 		for (T item : list) {
-			i += 1;
 			if (i == N) {
 				break;
 			}
+			i += 1;
 			System.out.println(item);
 		}
 	}
