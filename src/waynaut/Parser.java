@@ -35,7 +35,7 @@ public class Parser {
 		System.out.println("Parsing GTFS from " + folder);
 		// Required classes files in the feed
 //		String[] requiredFiles = {"agency", "stops", "routes", "trips", "stop_times", "calendar", "calendar_dates"};
-		String[] requiredFiles = {"routes"};
+		String[] requiredFiles = {"stop_times"};
 		
 		for (String fileName : requiredFiles) {
 			Path filePath = folder.resolve(fileName + ".txt");
@@ -63,6 +63,14 @@ public class Parser {
 				case "routes":
 					fp = new FeedParser<Routes>(Routes.class);
 					columns = "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color".split(",");
+					fp.parseCSVToBeanList(filePath, columns);
+				case "trips":
+					fp = new FeedParser<Trips>(Trips.class);
+					columns = "route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,shape_id,bikes_allowed,attributes_ch".split(",");
+					fp.parseCSVToBeanList(filePath, columns);
+				case "stop_times":
+					fp = new FeedParser<StopTimes>(StopTimes.class);
+					columns = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled,attributes_ch".split(",");
 					fp.parseCSVToBeanList(filePath, columns);
 			}
 		}
