@@ -1,13 +1,16 @@
 package waynaut;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,7 @@ import au.com.bytecode.opencsv.CSVWriter;
 import au.com.bytecode.opencsv.bean.CsvToBean;
 import au.com.bytecode.opencsv.bean.HeaderColumnNameTranslateMappingStrategy;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 
 public class Parser {
@@ -33,9 +37,10 @@ public class Parser {
 		
 		Path folder = Paths.get(args[0]);
 		System.out.println("Parsing GTFS from " + folder);
+		
 		// Required classes files in the feed
-//		String[] requiredFiles = {"agency", "stops", "routes", "trips", "stop_times", "calendar", "calendar_dates"};
-		String[] requiredFiles = {"stop_times"};
+		String[] requiredFiles = {"agency", "stops", "routes", "trips", "stop_times", "calendar"};
+//		String[] requiredFiles = {"calendar"};
 		
 		for (String fileName : requiredFiles) {
 			Path filePath = folder.resolve(fileName + ".txt");
@@ -45,36 +50,133 @@ public class Parser {
 				System.exit(0);
 			}	
 			
-			FeedParser fp;
+			FeedParser fp = null;
 			String[] columns;
+			
+			MyParser mp;
 			switch (fileName) {
 				case "agency":
-					fp = new FeedParser<Agency>(Agency.class);	
-					columns = "agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone".split(",");
-					fp.parseCSVToBeanList(filePath, columns);
-				case "calendar_dates":
-					fp = new FeedParser<CalendarDate>(CalendarDate.class);
-					columns = "service_id,date,exception_type".split(",");
-					fp.parseCSVToBeanList(filePath, columns);
+					fp = new FeedParser<Agency>(Agency.class);
+					fp.parseCSVToBeanList(filePath);
+					break;
 				case "stops":
 					fp = new FeedParser<Stops>(Stops.class);
-					columns = "stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,stop_elevation,zone_id,stop_url,location_type,parent_station,platform_code,ch_station_long_name,ch_station_synonym1,ch_station_synonym2,ch_station_synonym3,ch_station_synonym4".split(",");
-					fp.parseCSVToBeanList(filePath, columns);
+					fp.parseCSVToBeanList(filePath);
+					break;
 				case "routes":
 					fp = new FeedParser<Routes>(Routes.class);
-					columns = "route_id,agency_id,route_short_name,route_long_name,route_desc,route_type,route_url,route_color,route_text_color".split(",");
-					fp.parseCSVToBeanList(filePath, columns);
+					fp.parseCSVToBeanList(filePath);
+					break;
 				case "trips":
 					fp = new FeedParser<Trips>(Trips.class);
-					columns = "route_id,service_id,trip_id,trip_headsign,trip_short_name,direction_id,block_id,shape_id,bikes_allowed,attributes_ch".split(",");
-					fp.parseCSVToBeanList(filePath, columns);
+					fp.parseCSVToBeanList(filePath);
+					break;
 				case "stop_times":
 					fp = new FeedParser<StopTimes>(StopTimes.class);
-					columns = "trip_id,arrival_time,departure_time,stop_id,stop_sequence,stop_headsign,pickup_type,drop_off_type,shape_dist_traveled,attributes_ch".split(",");
-					fp.parseCSVToBeanList(filePath, columns);
+					fp.parseCSVToBeanList(filePath);
+					break;
+				case "calendar":
+					// to handle the case where I need to convert from String -> Boolean, or String -> Date
+					mp = new MyParser<Calendar>(Calendar.class);
+					mp.parseCSV(filePath);					
+					break;
+			}			
+		}
+		
+		String[] optionalFiles = {"calendar_dates", "feed_info", "frequencies", "transfers"};
+		
+		for (String fileName : optionalFiles) {
+			Path filePath = folder.resolve(fileName + ".txt");
+			
+			if (Files.exists(filePath)) {
+				FeedParser fp = null;
+				
+				switch (fileName) {
+				case "calendar_dates":
+					fp = new FeedParser<CalendarDate>(CalendarDate.class);
+					fp.parseCSVToBeanList(filePath);
+					break;
+				case "feed_info":
+					fp = new FeedParser<FeedInfo>(FeedInfo.class);
+					fp.parseCSVToBeanList(filePath);
+				}
 			}
 		}
 	}	
+}
+
+class MyParser<T> {
+	final Class<T> typeParameterClass;
+
+    public MyParser(Class<T> typeParameterClass) {	        
+    	this.typeParameterClass = typeParameterClass;
+	}
+    
+	public <T> List<T> parseCSV(Path filePath) {
+		List<T> csvValues = new ArrayList<T>();
+		
+		CSVParser parser;
+		try {
+			File file = filePath.toFile();
+			
+			// Parse the 1st time to get the header
+			parser = CSVParser.parse(file, StandardCharsets.UTF_8, CSVFormat.EXCEL);
+			
+			// Get first row as header
+			CSVRecord headersRecord = parser.iterator().next();
+			String[] headers = new String[headersRecord.size()]; 
+			Map<String, Integer> headersMap = new HashMap<String, Integer>();
+			for (int i = 0; i < headersRecord.size(); ++i) {
+				String header = toCamelCase(headersRecord.get(i)); 
+				headers[i] = header;
+				headersMap.put(header, i);
+			}
+			parser.close();
+			
+			// Parse the rest of the CSV
+			String headersString = StringUtils.join(headers, ",");
+			parser = CSVParser.parse(file,  StandardCharsets.UTF_8, CSVFormat.EXCEL.withHeader(headers));
+			
+			// Ignore the header line
+			parser.iterator().next();
+					
+			for (CSVRecord record : parser) {
+				@SuppressWarnings("unchecked")
+				T instance = (T) typeParameterClass.getDeclaredConstructor(Map.class).newInstance(record.toMap());
+				csvValues.add(instance);
+			}
+			parser.close();
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return csvValues;
+	}
+	
+	public String toCamelCase(String s) {
+		return WordUtils.uncapitalize(WordUtils.capitalize(
+				s, new char[]{'_'}).replaceAll("_", ""));		
+	}
 }
 
 class FeedParser<T> {
@@ -83,11 +185,17 @@ class FeedParser<T> {
     public FeedParser(Class<T> typeParameterClass) {	        
     	this.typeParameterClass = typeParameterClass;
 	}
+    
 	    
-	public <T> void parseCSVToBeanList(Path filePath, String[] columns) throws IOException {
+	public <T> List<T> parseCSVToBeanList(Path filePath) throws IOException {
 		// Parse using opencsv
 		HeaderColumnNameTranslateMappingStrategy<T> strategy = new HeaderColumnNameTranslateMappingStrategy<T>();
         
+		// Get header in the 1st row
+		BufferedReader brTest = new BufferedReader(new FileReader(filePath.toString()));
+		String[] columns = brTest .readLine().split(",");
+		brTest.close();
+		
         // Column mapping - general solution
         Map<String, String> columnMapping = createColumnMapping(columns);
 
@@ -97,7 +205,8 @@ class FeedParser<T> {
         CSVReader reader = new CSVReader(new FileReader(filePath.toString()));
         List<T> agencies = csvToBean.parse(strategy, reader);
         
-        System.out.println(agencies);
+        System.out.println("Done with " + filePath.toString() + "\n");
+        return agencies;
 	}
 	
 	public static Map<String, String> createColumnMapping(String[] columns) {
