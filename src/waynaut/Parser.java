@@ -8,9 +8,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -21,7 +23,9 @@ import au.com.bytecode.opencsv.CSVWriter;
 import au.com.bytecode.opencsv.bean.CsvToBean;
 import au.com.bytecode.opencsv.bean.HeaderColumnNameTranslateMappingStrategy;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang.math.IntRange;
 
 public class Parser {
 	public static void main(String[] args) throws IOException {
@@ -35,7 +39,7 @@ public class Parser {
 		System.out.println("Parsing GTFS from " + folder);
 		// Required classes files in the feed
 //		String[] requiredFiles = {"agency", "stops", "routes", "trips", "stop_times", "calendar", "calendar_dates"};
-		String[] requiredFiles = {"stop_times"};
+		String[] requiredFiles = {"agency"};
 		
 		for (String fileName : requiredFiles) {
 			Path filePath = folder.resolve(fileName + ".txt");
@@ -44,6 +48,7 @@ public class Parser {
 				System.out.format("Required file %s not existed", filePath);
 				System.exit(0);
 			}	
+			
 			
 			FeedParser fp;
 			String[] columns;
@@ -75,6 +80,54 @@ public class Parser {
 			}
 		}
 	}	
+}
+
+class MyParser {
+	public <T> void parseCSV(Path filePath) {
+		CSVParser parser;
+		try {
+			File file = filePath.toFile();
+			
+			// Parse the 1st time to get the header
+			parser = CSVParser.parse(file, StandardCharsets.UTF_8, CSVFormat.EXCEL);
+			
+			// Get first row as header
+			CSVRecord headersRecord = parser.iterator().next();
+			String[] headers = new String[headersRecord.size()]; 
+			Map<String, Integer> headersMap = new HashMap<String, Integer>();
+			for (int i = 0; i < headersRecord.size(); ++i) {
+				String header = toCamelCase(headersRecord.get(i)); 
+				headers[i] = header;
+				headersMap.put(header, i);
+			}
+			parser.close();
+			
+			// Parse the 2nd time
+			String headersString = StringUtils.join(headers, ",");
+			System.out.println(headersString);
+			parser = CSVParser.parse(file,  StandardCharsets.UTF_8, CSVFormat.EXCEL.withHeader(headers));
+			
+			// Ignore the header line
+			System.out.println(parser.iterator().next());
+
+			List<T> csvValues = new ArrayList<T>();
+			
+			for (CSVRecord record : parser) {
+				System.out.println(record);
+			}
+			parser.close();
+		
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public String toCamelCase(String s) {
+		return WordUtils.uncapitalize(WordUtils.capitalize(
+				s, new char[]{'_'}).replaceAll("_", ""));		
+	}
 }
 
 class FeedParser<T> {
