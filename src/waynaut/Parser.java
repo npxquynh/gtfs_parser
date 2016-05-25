@@ -38,17 +38,16 @@ public class Parser {
 		Path folder = Paths.get(args[0]);
 		System.out.println("Parsing GTFS from " + folder);
 		
-		// Required classes files in the feed
-		String[] requiredFiles = {"agency", "stops", "routes", "trips", "stop_times", "calendar"};
-//		String[] requiredFiles = {"calendar"};
+		if (!checkFeed(folder)) {
+			System.out.println("The folder provided is not the in the correct format");
+			System.exit(0);
+		}
 		
-		for (String fileName : requiredFiles) {
+		// Required classes files in the feed
+		String[] files = {"agency", "stops", "routes", "trips", "stop_times", "calendar", "calendar_dates", "feed_info", "frequencies", "transfers"};
+		
+		for (String fileName : files) {
 			Path filePath = folder.resolve(fileName + ".txt");
-			
-			if (!Files.exists(filePath)) {
-				System.out.format("Required file %s not existed", filePath);
-				System.exit(0);
-			}	
 			
 			FeedParser fp = null;
 			String[] columns;
@@ -74,6 +73,18 @@ public class Parser {
 				// to handle the case where I need to convert from String -> Boolean, or String -> Date
 				mp = new MyParser<Calendar>(Calendar.class);
 				break;
+			case "calendar_dates":
+				fp = new FeedParser<CalendarDate>(CalendarDate.class);
+				break;
+			case "feed_info":
+				fp = new FeedParser<FeedInfo>(FeedInfo.class);
+				break;
+			case "frequencies":
+				fp = new FeedParser<Frequencies>(Frequencies.class);
+				break;
+			case "transfers":
+				fp = new FeedParser<Transfers>(Transfers.class);
+				break;
 			}			
 			
 			// Print the first 5 lines
@@ -84,38 +95,20 @@ public class Parser {
 				printFirstNthItems(mp.parseCSV(filePath), 5);
 			}
 		}
-		
-		String[] optionalFiles = {"calendar_dates", "feed_info", "frequencies", "transfers"};
-		
-		for (String fileName : optionalFiles) {
-			Path filePath = folder.resolve(fileName + ".txt");
-			
-			if (Files.exists(filePath)) {
-				FeedParser fp = null;
-				
-				switch (fileName) {
-				case "calendar_dates":
-					fp = new FeedParser<CalendarDate>(CalendarDate.class);
-					break;
-				case "feed_info":
-					fp = new FeedParser<FeedInfo>(FeedInfo.class);
-					break;
-				case "frequencies":
-					fp = new FeedParser<Frequencies>(Frequencies.class);
-					break;
-				case "transfers":
-					fp = new FeedParser<Transfers>(Transfers.class);
-					break;
-				}
-				
-				// Print the first 5 lines
-				if (fp != null) {
-					printFirstNthItems(fp.parseCSVToBeanList(filePath), 5);
-				}
-			}
-		}
 	}	
 
+	public static boolean checkFeed(Path folder) {
+		String[] requiredFiles = {"agency", "stops", "routes", "trips", "stop_times", "calendar"};
+		
+		for (String fileName : requiredFiles) {
+			Path filePath = folder.resolve(fileName + ".txt");
+			if (!Files.exists(filePath)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	public static <T> void printFirstNthItems(List<T> list, int N) {
 		int i = 0;
 		for (T item : list) {
